@@ -1,0 +1,213 @@
+
++ SửaView NhanVien/Create.cshtml 
+<div class="form-group">
+ <div class="col-md-offset-2 col-md-10"> 
+   @*<input type="submit" value="Create" class="btn btn-default" />*@                 
+   <input class="btn btn-primary" name="submitButton" id="btnSave" value="Save" type="button" />             
+ </div>         
+</div>
+
+...
+<div id="msg" style="color : red; margin-top : 30px;"></div>
+@section Scripts {
+    @*@Scripts.Render("~/bundles/jqueryval")*@
+    <script type="text/javascript">
+        $(function () {
+            $("#btnSave").click(function () {
+                var nv = {};
+                nv.Hoten = $("#Hoten").val();
+                nv.Tuoi = $("#Tuoi").val();
+                nv.Diachi = $("#Diachi").val();
+                nv.Luong = $("#Luong").val();
+                nv.Maphong = $("#Maphong").val();
+                $.ajax({
+                    type: "POST",
+                    url: '@Url.Action("/Create")',
+                    data: '{' + JSON.stringify(nv) + '}',
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.result == true) {
+                            $("#msg").html('Thêm thành công !');
+                        } else {
+                            $("#msg").html(response.error);
+                        }
+                    },
+                    error: function (response) {
+                        alert("Lỗi  !")
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}
+
+
++ Sửa NhanVienController : Sửa code Create
+
+ [HttpPost] 
+        public ActionResult Create(NhanVien nv)
+        {
+            try
+            {
+                db.NhanViens.Add(nv);
+                db.SaveChanges();
+                return Json(new { result = true, JsonRequestBehavior.AllowGet });
+            }catch (Exception ex)
+            {
+                return Json(new { result = false, error = ex.Message });
+            }
+        }
+
++ Tạo PartialViewResult 
+public PartialViewResult CategoryMenu()
+        {
+            var li = db.Phongs.ToList();
+            return PartialView(li);
+        }
++ Tạo View cho PartialViewResult CategoryMenu
+
+@model IEnumerable<testASP.Models.Phong>
+    @foreach(var item in Model)
+            {
+                <a href="" >@item.Tenphong</a><label>&nbsp; | &nbsp;</label>
+            }
+
++ Vào Layout.cshtml
+
+<body>
+    <div>
+        <center>
+            @Html.ActionLink("Index", "Index", "NhanVien")<label>&nbsp; | &nbsp;</label>
+            @{Html.RenderAction("CategoryMenu", "NhanVien"); }
+
+@*login           @{ 
+               if(Session["username"] == null)
+            {
+                <a href="/Login/Login">Login</a>
+               }
+               else
+            {
+                <label>Welcome&nbsp;</label>
+                <b>@Session["username"]</b>
+                <label>&nbsp;|&nbsp;</label>
+                <a href="/Login/Login">Login</a>
+            }
+           }
+*@
+
+        </center>
+        <hr />
+        <div class="container body-content">
+            @RenderBody()
+            <hr />
+            <footer>
+                <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+            </footer>
+        </div>
+    </div>
+   
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+</body>
+
+
+
++ Vào NhanViencontroller :
+[Route("NhanVienTheoPhong/{Maphong}")]
+        public ActionResult HienThiTheoPhong(int Maphong)
+        {
+            var li = db.NhanViens.Where(e => e.Maphong == Maphong).ToList();
+            return View(li);
+        }
++ Mở routesConfig thêm :
+routes.MapMvcAttributeRoutes();
+
++ Sang categoryMenu.cshtml
+var url = "/NhanVienTheoPhong/" + item.Maphong;
+<a href="@url" >@item.Tenphong</a><label>&nbsp; | &nbsp;</label>
+
+
+
+
+login
+logincontroller
+
+
+
+
+
+using onluyen.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+
+namespace onluyen.Controllers
+{
+    public class LoginController : Controller
+    {
+        // GET: Login
+        public Modeldb db = new Modeldb();
+        public ActionResult Index()
+        {
+            return View();
+
+        }
+        public ActionResult Login()
+        {
+            return View();
+        }
+        [HttpPost]
+        public ActionResult Login(string username, string password)
+        {
+            var user = db.tblUser.Where(u => u.username == username && u.password == password).FirstOrDefault();
+            if(user == null)
+            {
+                ViewBag.errLogin = "sai tên hoặc mật khẩu";
+                return View("Login");
+            }
+            else
+            {
+                Session["username"] = username;
+                return RedirectToAction("Index", "NhanViens");
+            }
+        }
+        public ActionResult logout()
+        {
+            Session["username"] = null;
+            return RedirectToAction("Index", "NhanViens");
+        }
+    }
+}
+
+
+
+view login
+
+
+
+@{ 
+    ViewBag.Title = "Login";
+}
+<h2>login</h2>
+<div class="login">
+    <div class="input">
+        @using (Html.BeginForm())
+        {
+            <p><label>Username:</label> <input type="text" name="username" /></p> <br />
+            <p><label>Password:</label> <input type="text" name="password" /></p> <br />
+            <p><input class="lg" type="submit" value="Login" /></p>
+
+        }
+    </div>
+    @ViewBag.errLogin
+
+</div>
+
+
+
